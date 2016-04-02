@@ -15,6 +15,11 @@ enum message_t
     MESSAGE_MAX
 };
 
+enum flags_t
+{
+    CHUNK_NAME_TEMP = 1
+};
+
 #define MAX_REPLICATION_FACTOR 32
 
 /*
@@ -51,14 +56,13 @@ enum message_t
  * PUT_CHUNK_DATA
  *   u8         : type
  *   u64        : chunk_id
- *   u64        : size
+ *   u64        : size (including hash size of 20 bytes)
  *   u32        : replication factor
  *   u32,u16*n  : replication list
- *   u8*n       : data
  *   u8*20      : hash
+ *   u8*n       : data
  * Response:
  *   u8    : OK / FAIL
- *   u8*20 : full chunk hash, if OK
  */
 
 /*
@@ -117,6 +121,11 @@ struct put_data_request_t
 struct put_data_context_t
 {
     struct put_data_request_t request;
+    char filename[256];
+    void *base;
+    uint64_t i;
+    uint64_t file_size;
+    int fd;
 };
 
 struct active_connection_t
@@ -141,6 +150,9 @@ message_get_chunk_data_handler(struct active_connection_t *connection);
 
 int
 message_put_chunk_data_handler(struct active_connection_t *connection);
+
+const char *
+get_data_directory(void);
 
 void
 chunk_id_to_name(char *name, size_t name_size, uint64_t id);

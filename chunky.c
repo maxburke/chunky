@@ -90,10 +90,17 @@ chunk_name_to_id(uint64_t *id, const char *name)
     return 0;
 }
 
+const char *
+get_data_directory(void)
+{
+    return data_directory;
+}
+
 void
 chunk_id_to_name(char *name, size_t name_size, uint64_t id)
 {
-    if (snprintf(name, name_size, "%s/%0lx", data_directory, id) >= (int)name_size)
+    if (snprintf(name, name_size, "%s/%0lx", data_directory, id)
+            >= (int)name_size)
     {
         fprintf(stderr, "Path length too long, string '%s' was truncated. Aborting.", name);
         abort();

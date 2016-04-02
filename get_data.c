@@ -53,7 +53,7 @@ read_get_data_request(struct active_connection_t *connection)
 }
 
 static int
-map_file(struct active_connection_t *connection)
+map_file_for_read(struct active_connection_t *connection)
 {
     uint64_t id;
     char chunk_file[256];
@@ -90,6 +90,7 @@ map_file(struct active_connection_t *connection)
 
         response = FAIL;
         write(connection->fd, &response, sizeof response);
+        close(fd);
 
         return -1;
     }
@@ -107,6 +108,7 @@ map_file(struct active_connection_t *connection)
 
         response = FAIL;
         write(connection->fd, &response, sizeof response);
+        close(fd);
 
         return -1;
     }
@@ -146,10 +148,11 @@ message_get_chunk_data_handler(struct active_connection_t *connection)
             return 0;
         }
     }
+    assert((connection->state & READ_REQUEST) != 0);
 
     if ((connection->state & MAPPED_FILE) == 0)
     {
-        if (map_file(connection) != 0)
+        if (map_file_for_read(connection) != 0)
         {
             /*
              * If map fails, the FAIL packet will have been sent and so
@@ -157,7 +160,10 @@ message_get_chunk_data_handler(struct active_connection_t *connection)
              */
             return 0;
         }
+
+        buffer_add_u8(connection, OK);
     }
+    assert((connection->state & MAPPED_FILE) != 0);
 
     FLUSH_BUFFER(connection->state, connection);
 
@@ -167,6 +173,7 @@ message_get_chunk_data_handler(struct active_connection_t *connection)
 
         connection->state |= SENT_SIZE;
     }
+    assert((connection->state & SENT_SIZE) != 0);
 
     FLUSH_BUFFER(connection->state, connection);
 
@@ -199,8 +206,7 @@ message_get_chunk_data_handler(struct active_connection_t *connection)
             /*
              * TODO: Log and handle error.
              */
-
-            return 0;
+            goto abort_fail;
         }
 
         if (bytes_sent == 0 && remaining != 0)
@@ -209,7 +215,7 @@ message_get_chunk_data_handler(struct active_connection_t *connection)
              * TODO: Log and handle error. Remote dropped connection?
              */
 
-            return 0;
+            goto abort_fail;
         }
 
         context->sent = sent + bytes_sent;
@@ -227,5 +233,11 @@ message_get_chunk_data_handler(struct active_connection_t *connection)
     }
 
     return 1;
+
+abort_fail:
+    munmap(connection->get_data_context.base, connection->get_data_context.size);
+    close(connection->get_data_context.fd);
+
+    return 0;
 }
 
