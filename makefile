@@ -2,7 +2,7 @@ CC = gcc
 CFLAGS = -g -Wextra -Wall -pedantic -Werror
 LIBS = 
 LDFLAGS = -g
-OBJ = get_data.o put_data.o mlb_sha1.o chunky.o
+OBJ = initial.o ping.o get_chunk_list.o get_data.o put_data.o mlb_sha1.o chunky.o
 %.o: %.c
 	$(CC) -c -o $@ $< $(CFLAGS)
 

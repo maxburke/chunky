@@ -253,6 +253,17 @@ message_put_chunk_data_handler(struct active_connection_t *connection)
     }
     assert((connection->state & VERIFIED) != 0);
 
+    if ((connection->state & MIRRORED) == 0)
+    {
+        if (initialize_mirror(connection) != 0)
+        {
+            /*
+             * Reshuffle mirror list around, re-attempt mirror.
+             */
+        }
+    }
+    assert((connection->state & MIRRORED) != 0);
+
 #error MIRROR
 
     return 0;

@@ -145,6 +145,15 @@ struct active_connection_t
     struct mlb_sha1_hash_context_t hash_context;
 };
 
+int 
+message_initial_handler(struct active_connection_t *connection);
+
+int 
+message_ping(struct active_connection_t *connection);
+
+int
+message_get_chunk_list_handler(struct active_connection_t *connection);
+
 int
 message_get_chunk_data_handler(struct active_connection_t *connection);
 
@@ -154,8 +163,17 @@ message_put_chunk_data_handler(struct active_connection_t *connection);
 const char *
 get_data_directory(void);
 
+uint32_t
+get_chunk_num(void);
+
+const uint64_t *
+get_chunks(void);
+
 void
 chunk_id_to_name(char *name, size_t name_size, uint64_t id);
+
+int
+buffer_fill(struct active_connection_t *connection, const void *data, size_t bytes);
 
 int
 buffer_add_u8(struct active_connection_t *connection, uint8_t val);

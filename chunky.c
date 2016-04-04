@@ -40,6 +40,18 @@ static uint32_t chunk_num;
 static uint32_t chunk_capacity;
 uint64_t *chunks;
 
+uint32_t
+get_chunk_num(void)
+{
+    return chunk_num;
+}
+
+const uint64_t *
+get_chunks(void)
+{
+    return chunks;
+}
+
 static void
 chunk_push(uint64_t chunk_id)
 {
@@ -231,36 +243,6 @@ buffer_add_u64(struct active_connection_t *connection, uint64_t val)
  */
 typedef int (*message_handler_t)(struct active_connection_t *);
 
-static int 
-message_initial_handler(struct active_connection_t *connection)
-{
-    uint8_t message;
-    int rv;
-   
-    message = 0;
-    rv = read(connection->fd, &message, sizeof message);
-
-    if (rv <= 0)
-    {
-        return 0;
-    }
-
-    connection->message = message;
-
-    return 1;
-}
-
-static int 
-message_ping(struct active_connection_t *connection)
-{
-    uint8_t response;
-
-    response = OK;
-    write(connection->fd, &response, sizeof response);
-
-    return 0;
-}
-
 int
 buffer_send(struct active_connection_t *connection)
 {
@@ -292,83 +274,6 @@ buffer_send(struct active_connection_t *connection)
     connection->cursor = 0;
 
     return 0;
-}
-
-static int
-message_get_chunk_list_handler(struct active_connection_t *connection)
-{
-    uint32_t state;
-
-    enum states_t
-    {
-        FLUSHING_BUFFER = 1 << 0,
-        SENT_OK = 1 << 1,
-        SENT_NUM_CHUNKS = 1 << 2,
-        SENT_CHUNKS = 1 << 3,
-        SENT_HASH = 1 << 4,
-    };
-
-    state = connection->state;
-
-    FLUSH_BUFFER(state, connection);
-
-    if ((state & SENT_OK) == 0)
-    {
-        if (buffer_add_u8(connection, OK) != 0)
-        {
-            goto chunk_list_flush;
-        }
-
-        state |= SENT_OK;
-    }
-
-    if ((state & SENT_NUM_CHUNKS) == 0)
-    {
-        if (buffer_add_u32(connection, chunk_num) != 0)
-        {
-            goto chunk_list_flush;
-        }
-
-        state |= SENT_NUM_CHUNKS;
-    }
-
-    if ((state & SENT_CHUNKS) == 0)
-    {
-        uint32_t i, e;
-        for (i = connection->chunk_list_context.i, e = chunk_num; i < e; ++i)
-        {
-            uint64_t chunk;
-
-            chunk = chunks[i];
-            if (buffer_add_u64(connection, chunk) != 0)
-            {
-                connection->chunk_list_context.i = i;
-                goto chunk_list_flush;
-            }
-            mlb_sha1_hash_update(&connection->hash_context, &chunk, sizeof chunk);
-        }
-
-        state |= SENT_CHUNKS;
-    }
-
-    if ((state & SENT_HASH) == 0)
-    {
-        struct mlb_sha1_hash_t hash;
-
-        hash = mlb_sha1_hash_finalize(&connection->hash_context);
-        if (buffer_fill(connection, &hash, sizeof hash) != 0)
-        {
-            goto chunk_list_flush;
-        }
-
-        state |= SENT_HASH;
-    }
-
-    return 0;
-
-chunk_list_flush:
-    connection->state = state | FLUSHING_BUFFER;
-    return 1;
 }
 
 static int
