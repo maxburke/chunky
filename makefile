@@ -1,14 +1,43 @@
-CC = gcc
-CFLAGS = -g -Wextra -Wall -pedantic -Werror
-LIBS = 
+OS = $(shell uname)
+
+CFLAGS = -Wall -Wextra -pedantic -g -Werror -std=c11
+DEFINES = _POSIX_C_SOURCE=200112L
+INCLUDEDIRS = /usr/local/include src include tests
+LIBS = tests/libchunky_test.a src/libchunky.a
 LDFLAGS = -g
-OBJ = initial.o ping.o get_chunk_list.o get_data.o put_data.o mlb_sha1.o chunky.o
-%.o: %.c
-	$(CC) -c -o $@ $< $(CFLAGS)
+OBJS = $(patsubst %.c,%.o,$(wildcard *.c))
+HEADERS = $(wildcard *.h)
 
-chunky: $(OBJ)
-	gcc -o $@ $^ $(LDFLAGS) $(LIBS)
+ifeq ($(OS), Darwin)
+    CC = clang
+    LD = clang
+else
+    CC = gcc
+    LD = gcc
+endif
 
-.PHONY: clean
-clean:
-	rm -rf *.o chunky
+ifdef OPT
+    CFLAGS := $(CFLAGS) -O$(OPT) -DNDEBUG
+endif
+
+.PHONY: all src tests clean-src clean-tests
+all: chunky testchunky
+
+src tests:
+	$(MAKE) --directory=$@ $(MAKEFLAGS)
+
+clean-src clean-tests:
+	$(MAKE) --directory=$(subst clean-,,$@) clean
+
+%.o : %.c $(HEADERS)
+	$(CC) $(CFLAGS) -c -o $@ $< $(addprefix -I, $(INCLUDEDIRS)) $(addprefix -D, $(DEFINES))
+
+testchunky : $(OBJS) src tests
+	$(LD) $(LDFLAGS) -o $@ $(filter %.o,$^) $(LIBS)
+
+chunky : $(OBJS) src
+	$(LD) $(LDFLAGS) -o $@ $(filter %.o,$^) $(LIBS)
+
+clean : clean-src clean-tests
+	rm *.o
+	rm chunky

@@ -202,7 +202,7 @@ accept_add_to_epoll_list(int epoll_fd, int listen_sock)
     return 0;
 }
 
-static int
+int
 buffer_fill(struct active_connection_t *connection, const void *data, size_t bytes)
 {
     int cursor = connection->cursor;
