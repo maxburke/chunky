@@ -32,7 +32,7 @@ union uint64_to_bytes_t
     char bytes[8];
 };
 
-#if LITTLE_ENDIAN
+#if LITTLE_ENDIAN || (defined(__LITTLE_ENDIAN__) && __LITTLE_ENDIAN__)
     static inline uint32_t
     u32_to_big_endian(uint32_t p)
     {
@@ -56,7 +56,7 @@ union uint64_to_bytes_t
             *ptr++ = c8.bytes[(sizeof c8.bytes) - i - 1];
         }
     }
-#elif BIG_ENDIAN
+#elif BIG_ENDIAN || (defined(__BIG_ENDIAN__) && __BIG_ENDIAN__)
 #   define u32_to_big_endian(x) (x)
 
     static inline void
@@ -74,7 +74,7 @@ union uint64_to_bytes_t
         }
     }
 #else
-#   error Must define either M_LITTLE_ENDIAN to 1 or M_BIG_ENDIAN to 1
+#   error Must define either LITTLE_ENDIAN to 1 or BIG_ENDIAN to 1
 #endif
 
 static inline uint32_t

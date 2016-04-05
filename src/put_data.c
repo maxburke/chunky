@@ -7,8 +7,12 @@
 #include <string.h>
 
 #include <fcntl.h>
-#include <unistd.h>
+#include <netinet/in.h>
+#include <sys/epoll.h>
 #include <sys/mman.h>
+#include <sys/socket.h>
+#include <sys/types.h>
+#include <unistd.h>
 
 #include "chunky.h"
 
@@ -129,6 +133,78 @@ map_file_for_write(struct active_connection_t *connection)
     context->fd = fd;
     context->base = base;
     context->file_size = file_size;
+
+    return 0;
+}
+
+static int
+initialize_mirror(struct active_connection_t *connection)
+{
+    struct put_data_request_t *request;
+    int sock;
+    struct sockaddr_in addr;
+    struct epoll_event event = { 0, { 0 } };
+
+    request = &connection->put_data_context.request;
+
+    if (request->n == 0)
+    {
+        return 0;
+    }
+
+    assert(request->n <= MAX_REPLICATION_FACTOR);
+
+    /*
+     * shutdown is used to ensure a FIN packet is sent after the chunk
+     * server sends the OK packet.
+     */
+    shutdown(connection->fd, SHUT_WR);
+
+    /*
+     * TODO: This should probably poll in a recv()/read() loop until
+     * it returns 0 before closing.
+     */
+    close(connection->fd);
+
+    /*
+     * In case we can't connect to the mirror, this ensures we do
+     * not accidentally re-close the fd when the normal socket 
+     * clean-up happens.
+     */
+    connection->fd = 0;
+    memset(&addr, 0, sizeof addr);
+    addr.sin_family      = AF_INET;
+    addr.sin_addr.s_addr = request->replicants[0].address;
+    addr.sin_port        = request->replicants[0].port;
+
+    sock = socket(AF_INET, SOCK_STREAM, 0);
+    if (connect(sock, &addr, sizeof addr) != 0)
+    {
+        /*
+         * TODO: report error!
+         */
+        assert(0 && "report error!");
+        return -1;
+    }
+
+    fcntl(sock, F_SETFD, O_NONBLOCK);
+
+    connection->fd      = sock;
+    connection->message = MESSAGE_CHUNK_MIRROR;
+    memset(connection->buffer, 0, sizeof connection->buffer);
+    connection->cursor  = 0;
+    connection->pos     = 0;
+    connection->state   = 0;
+    memset(&connection->hash_context, 0, sizeof connection->hash_context);
+
+    int epoll_fd = get_epoll_fd();
+    VERIFY(epoll_ctl(epoll_fd, EPOLL_CTL_ADD, connection->fd, &event) != -1);
+
+    /*
+     * At this point we've re-appropriated the connection object for a mirror 
+     * operation. We can leave the put data handler and let the mirror handler
+     * resume.
+     */
 
     return 0;
 }
@@ -255,18 +331,33 @@ message_put_chunk_data_handler(struct active_connection_t *connection)
 
     if ((connection->state & MIRRORED) == 0)
     {
-        if (initialize_mirror(connection) != 0)
-        {
-            /*
-             * Reshuffle mirror list around, re-attempt mirror.
-             */
-        }
-    }
-    assert((connection->state & MIRRORED) != 0);
+        uint32_t i;
+        uint32_t e = connection->put_data_context.request.n;
 
-#error MIRROR
+        for (i = 0; i < e; ++i)
+        {
+            if (initialize_mirror(connection) == 0)
+            {
+                goto done;
+            }
+        }
+
+        /*
+         * TODO: At this point, all our mirrors have been exhausted and we have
+         * been unable to connect to any of them. Perhaps we just just give up.
+         */
+        assert(0 && "Life sucks and then you die.");
+    }
 
     return 0;
+
+done:
+    /*
+     * We return 1 here because we've hijacked the connection with a new one to
+     * our mirror so there is still work to be done, however this work will be
+     * done by the mirror data handler.
+     */
+    return 1;
 
 abort_fail:
     munmap(connection->put_data_context.base, connection->put_data_context.file_size);

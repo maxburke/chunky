@@ -12,6 +12,7 @@ enum message_t
     MESSAGE_PUT_CHUNK_DATA = 4,
     MESSAGE_DELETE_CHUNK = 5,
     MESSAGE_SHUTDOWN = 6,
+    MESSAGE_CHUNK_MIRROR = 7,
     MESSAGE_MAX
 };
 
@@ -160,6 +161,9 @@ message_get_chunk_data_handler(struct active_connection_t *connection);
 int
 message_put_chunk_data_handler(struct active_connection_t *connection);
 
+int
+message_mirror_chunk_data_handler(struct active_connection_t *connection);
+
 const char *
 get_data_directory(void);
 
@@ -168,6 +172,12 @@ get_chunk_num(void);
 
 const uint64_t *
 get_chunks(void);
+
+int
+get_epoll_fd(void);
+
+int
+add_to_epoll_list(int fd);
 
 void
 chunk_id_to_name(char *name, size_t name_size, uint64_t id);
@@ -209,4 +219,11 @@ buffer_send(struct active_connection_t *connection);
     }                                       \
     while (0)
 
+#define PERROR() do { \
+        char buf[128]; \
+        snprintf(buf, sizeof buf, "%s(%d)", __FILE__, __LINE__); \
+        perror(buf); \
+    } while(0)
+
+#define VERIFY(x) if (!(x)) { PERROR(); return -1; }
 

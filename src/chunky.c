@@ -1,3 +1,5 @@
+#define _BSD_SOURCE
+
 #include <assert.h>
 #include <errno.h>
 #include <stdint.h>
@@ -18,13 +20,6 @@
 #include "mlb_sha1.h"
 
 #define UNUSED(x) (void)(sizeof(x))
-#define PERROR() do { \
-        char buf[128]; \
-        snprintf(buf, sizeof buf, "%s(%d)", __FILE__, __LINE__); \
-        perror(buf); \
-    } while(0)
-
-#define VERIFY(x) if (!(x)) { PERROR(); return -1; }
 
 #define TOKEN_PASTE_HELPER(x, y)    x ## y
 #define TOKEN_PASTE(x, y)           TOKEN_PASTE_HELPER(x, y)
@@ -38,7 +33,8 @@
 static char data_directory[256];
 static uint32_t chunk_num;
 static uint32_t chunk_capacity;
-uint64_t *chunks;
+static uint64_t *chunks;
+static int epoll_fd;
 
 uint32_t
 get_chunk_num(void)
@@ -183,7 +179,7 @@ create_socket_listener(void)
 }
 
 static int
-accept_add_to_epoll_list(int epoll_fd, int listen_sock)
+accept_add_to_epoll_list(int epoll_set, int listen_sock)
 {
     int connection;
     struct epoll_event event = { 0, { 0 } };
@@ -197,7 +193,7 @@ accept_add_to_epoll_list(int epoll_fd, int listen_sock)
     event.events = EPOLLIN | EPOLLOUT;
     event.data.fd = connection;
 
-    VERIFY(epoll_ctl(epoll_fd, EPOLL_CTL_ADD, connection, &event) != -1);
+    VERIFY(epoll_ctl(epoll_set, EPOLL_CTL_ADD, connection, &event) != -1);
 
     return 0;
 }
@@ -297,7 +293,8 @@ message_handler_t message_handlers[] = {
     message_get_chunk_data_handler,
     message_put_chunk_data_handler,
     message_delete_chunk_handler,
-    message_shutdown_handler
+    message_shutdown_handler,
+    message_mirror_chunk_data_handler
 };
 
 static struct active_connection_t *active_connections;
@@ -318,7 +315,12 @@ handle_connection(int index)
         }
 
         --num_active_connections;
-        close(connection->fd);
+
+        if (connection->fd != 0)
+        {
+            shutdown(connection->fd, SHUT_WR);
+            close(connection->fd);
+        }
     }
 
     return;
@@ -356,7 +358,6 @@ do_listen_loop(void)
 {
     int socket_listener;
     const int MANDATORY_NON_ZERO_PARAMETER = 1;
-    int epoll_fd;
     struct epoll_event events[MAX_EVENTS];
     struct epoll_event ev;
 
