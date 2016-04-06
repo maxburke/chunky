@@ -48,6 +48,12 @@ get_chunks(void)
     return chunks;
 }
 
+int
+get_epoll_fd(void)
+{
+    return epoll_fd;
+}
+
 static void
 chunk_push(uint64_t chunk_id)
 {
