@@ -19,7 +19,7 @@ enum get_data_states_t
 };
 
 static int
-read_get_data_request(struct active_connection_t *connection)
+read_get_data_request(struct connection_t *connection)
 {
     char *buffer;
     uint32_t pos;
@@ -53,7 +53,7 @@ read_get_data_request(struct active_connection_t *connection)
 }
 
 static int
-map_file_for_read(struct active_connection_t *connection)
+map_file_for_read(struct connection_t *connection)
 {
     uint64_t id;
     char chunk_file[256];
@@ -123,7 +123,7 @@ map_file_for_read(struct active_connection_t *connection)
 }
 
 int
-message_get_chunk_data_handler(struct active_connection_t *connection)
+message_get_chunk_data_handler(struct connection_t *connection)
 {
     if ((connection->state & READ_REQUEST) != 0)
     {

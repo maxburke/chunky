@@ -27,7 +27,7 @@ enum put_data_states_t
 };
 
 static int
-read_put_data_request(struct active_connection_t *connection)
+read_put_data_request(struct connection_t *connection)
 {
     char *buffer;
     uint32_t pos;
@@ -62,7 +62,7 @@ read_put_data_request(struct active_connection_t *connection)
 }
 
 static int
-map_file_for_write(struct active_connection_t *connection)
+map_file_for_write(struct connection_t *connection)
 {
     struct put_data_context_t *context;
     uint64_t id;
@@ -138,7 +138,7 @@ map_file_for_write(struct active_connection_t *connection)
 }
 
 static int
-initialize_mirror(struct active_connection_t *connection)
+initialize_mirror(struct connection_t *connection)
 {
     struct put_data_request_t *request;
     int sock;
@@ -210,7 +210,7 @@ initialize_mirror(struct active_connection_t *connection)
 }
 
 int
-message_put_chunk_data_handler(struct active_connection_t *connection)
+message_put_chunk_data_handler(struct connection_t *connection)
 {
     if ((connection->state & READ_REQUEST) != 0)
     {

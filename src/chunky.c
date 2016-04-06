@@ -205,7 +205,7 @@ accept_add_to_epoll_list(int epoll_set, int listen_sock)
 }
 
 int
-buffer_fill(struct active_connection_t *connection, const void *data, size_t bytes)
+buffer_fill(struct connection_t *connection, const void *data, size_t bytes)
 {
     int cursor = connection->cursor;
     if (cursor + bytes >= sizeof connection->buffer)
@@ -221,19 +221,19 @@ buffer_fill(struct active_connection_t *connection, const void *data, size_t byt
 }
 
 int
-buffer_add_u8(struct active_connection_t *connection, uint8_t val)
+buffer_add_u8(struct connection_t *connection, uint8_t val)
 {
     return buffer_fill(connection, &val, sizeof val);
 }
 
 int
-buffer_add_u32(struct active_connection_t *connection, uint32_t val)
+buffer_add_u32(struct connection_t *connection, uint32_t val)
 {
     return buffer_fill(connection, &val, sizeof val);
 }
 
 int
-buffer_add_u64(struct active_connection_t *connection, uint64_t val)
+buffer_add_u64(struct connection_t *connection, uint64_t val)
 {
     return buffer_fill(connection, &val, sizeof val);
 }
@@ -243,10 +243,10 @@ buffer_add_u64(struct active_connection_t *connection, uint64_t val)
  * Return value is zero if processing of the message is complete,
  * non-zero otherwise.
  */
-typedef int (*message_handler_t)(struct active_connection_t *);
+typedef int (*message_handler_t)(struct connection_t *);
 
 int
-buffer_send(struct active_connection_t *connection)
+buffer_send(struct connection_t *connection)
 {
     ssize_t bytes_sent;
     char *buffer = connection->buffer;
@@ -279,14 +279,14 @@ buffer_send(struct active_connection_t *connection)
 }
 
 static int
-message_delete_chunk_handler(struct active_connection_t *connection)
+message_delete_chunk_handler(struct connection_t *connection)
 {
     UNUSED(connection);
     return 0;
 }
 
 static int
-message_shutdown_handler(struct active_connection_t *connection)
+message_shutdown_handler(struct connection_t *connection)
 {
     UNUSED(connection);
     return 0;
@@ -303,14 +303,14 @@ message_handler_t message_handlers[] = {
     message_mirror_chunk_data_handler
 };
 
-static struct active_connection_t *active_connections;
+static struct connection_t *active_connections;
 static int num_active_connections;
 static int max_active_connections;
 
 static void
 handle_connection(int index)
 {
-    struct active_connection_t *connection = &active_connections[index];
+    struct connection_t *connection = &active_connections[index];
     int message = connection->message;
 
     if (message_handlers[message](connection) == 0)
@@ -349,11 +349,11 @@ find_and_handle_connection(int fd)
     {
         const int realloc_delta = 16;
         active_connections = realloc(active_connections, 
-                (max_active_connections + realloc_delta) * sizeof(struct active_connection_t));
+                (max_active_connections + realloc_delta) * sizeof(struct connection_t));
     }
 
     int slot = num_active_connections++;
-    memset(&active_connections[slot], 0, sizeof(struct active_connection_t));
+    memset(&active_connections[slot], 0, sizeof(struct connection_t));
     active_connections[slot].fd = fd;
 
     handle_connection(slot);

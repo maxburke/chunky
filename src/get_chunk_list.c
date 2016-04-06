@@ -1,7 +1,7 @@
 #include "chunky.h"
     
 int
-message_get_chunk_list_handler(struct active_connection_t *connection)
+message_get_chunk_list_handler(struct connection_t *connection)
 {
     uint32_t state;
     uint32_t num_chunks;

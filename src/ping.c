@@ -4,7 +4,7 @@
 #include "chunky.h"
 
 int 
-message_ping(struct active_connection_t *connection)
+message_ping(struct connection_t *connection)
 {
     uint8_t response;
 

@@ -129,7 +129,7 @@ struct put_data_context_t
     int fd;
 };
 
-struct active_connection_t
+struct connection_t
 {
     int fd;
     uint8_t message;
@@ -147,22 +147,22 @@ struct active_connection_t
 };
 
 int 
-message_initial_handler(struct active_connection_t *connection);
+message_initial_handler(struct connection_t *connection);
 
 int 
-message_ping(struct active_connection_t *connection);
+message_ping(struct connection_t *connection);
 
 int
-message_get_chunk_list_handler(struct active_connection_t *connection);
+message_get_chunk_list_handler(struct connection_t *connection);
 
 int
-message_get_chunk_data_handler(struct active_connection_t *connection);
+message_get_chunk_data_handler(struct connection_t *connection);
 
 int
-message_put_chunk_data_handler(struct active_connection_t *connection);
+message_put_chunk_data_handler(struct connection_t *connection);
 
 int
-message_mirror_chunk_data_handler(struct active_connection_t *connection);
+message_mirror_chunk_data_handler(struct connection_t *connection);
 
 const char *
 get_data_directory(void);
@@ -183,19 +183,19 @@ void
 chunk_id_to_name(char *name, size_t name_size, uint64_t id);
 
 int
-buffer_fill(struct active_connection_t *connection, const void *data, size_t bytes);
+buffer_fill(struct connection_t *connection, const void *data, size_t bytes);
 
 int
-buffer_add_u8(struct active_connection_t *connection, uint8_t val);
+buffer_add_u8(struct connection_t *connection, uint8_t val);
 
 int
-buffer_add_u32(struct active_connection_t *connection, uint32_t val);
+buffer_add_u32(struct connection_t *connection, uint32_t val);
 
 int
-buffer_add_u64(struct active_connection_t *connection, uint64_t val);
+buffer_add_u64(struct connection_t *connection, uint64_t val);
 
 int
-buffer_send(struct active_connection_t *connection);
+buffer_send(struct connection_t *connection);
 
 #define FLUSH_BUFFER(state, connection)     \
     do {                                    \

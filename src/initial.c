@@ -3,7 +3,7 @@
 #include "chunky.h"
     
 int 
-message_initial_handler(struct active_connection_t *connection)
+message_initial_handler(struct connection_t *connection)
 {
     uint8_t message;
     int rv;
