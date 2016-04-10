@@ -17,11 +17,11 @@ message_get_chunk_list_handler(struct connection_t *connection)
 
     state = connection->state;
 
-    FLUSH_BUFFER(state, connection);
+    FLUSH_BUFFER(state, connection->fd, &connection->buffer);
 
     if ((state & SENT_OK) == 0)
     {
-        if (buffer_add_u8(connection, OK) != 0)
+        if (buffer_add_u8(&connection->buffer, OK) != 0)
         {
             goto chunk_list_flush;
         }
@@ -33,7 +33,7 @@ message_get_chunk_list_handler(struct connection_t *connection)
 
     if ((state & SENT_NUM_CHUNKS) == 0)
     {
-        if (buffer_add_u32(connection, num_chunks) != 0)
+        if (buffer_add_u32(&connection->buffer, num_chunks) != 0)
         {
             goto chunk_list_flush;
         }
@@ -52,7 +52,7 @@ message_get_chunk_list_handler(struct connection_t *connection)
             uint64_t chunk;
 
             chunk = chunks[i];
-            if (buffer_add_u64(connection, chunk) != 0)
+            if (buffer_add_u64(&connection->buffer, chunk) != 0)
             {
                 connection->chunk_list_context.i = i;
                 goto chunk_list_flush;
@@ -68,7 +68,7 @@ message_get_chunk_list_handler(struct connection_t *connection)
         struct mlb_sha1_hash_t hash;
 
         hash = mlb_sha1_hash_finalize(&connection->hash_context);
-        if (buffer_fill(connection, &hash, sizeof hash) != 0)
+        if (buffer_fill(&connection->buffer, &hash, sizeof hash) != 0)
         {
             goto chunk_list_flush;
         }

@@ -129,19 +129,24 @@ struct put_data_context_t
     int fd;
 };
 
+struct buffer_t
+{
+    char buf[2048];
+    int cursor;
+    int pos;
+};
+
 struct connection_t
 {
     int fd;
     uint8_t message;
-    char buffer[2048];
     union
     {
         struct chunk_list_context_t chunk_list_context;
         struct get_data_context_t get_data_context;
         struct put_data_context_t put_data_context;
     };
-    int cursor;
-    int pos;
+    struct buffer_t buffer;
     uint32_t state;
     struct mlb_sha1_hash_context_t hash_context;
 };
@@ -183,27 +188,27 @@ void
 chunk_id_to_name(char *name, size_t name_size, uint64_t id);
 
 int
-buffer_fill(struct connection_t *connection, const void *data, size_t bytes);
+buffer_fill(struct buffer_t *buffer, const void *data, size_t bytes);
 
 int
-buffer_add_u8(struct connection_t *connection, uint8_t val);
+buffer_add_u8(struct buffer_t *buffer, uint8_t val);
 
 int
-buffer_add_u32(struct connection_t *connection, uint32_t val);
+buffer_add_u32(struct buffer_t *buffer, uint32_t val);
 
 int
-buffer_add_u64(struct connection_t *connection, uint64_t val);
+buffer_add_u64(struct buffer_t *buffer, uint64_t val);
 
 int
-buffer_send(struct connection_t *connection);
+buffer_send(int fd, struct buffer_t *buffer);
 
-#define FLUSH_BUFFER(state, connection)     \
+#define FLUSH_BUFFER(state, fd, buffer)     \
     do {                                    \
         if (state & FLUSHING_BUFFER)        \
         {                                   \
             int rv;                         \
                                             \
-            rv = buffer_send(connection);   \
+            rv = buffer_send(fd, buffer);   \
             if (rv == 1)                    \
             {                               \
                 return 1;                   \

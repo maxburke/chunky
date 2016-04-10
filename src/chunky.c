@@ -205,37 +205,37 @@ accept_add_to_epoll_list(int epoll_set, int listen_sock)
 }
 
 int
-buffer_fill(struct connection_t *connection, const void *data, size_t bytes)
+buffer_fill(struct buffer_t *buffer, const void *data, size_t bytes)
 {
-    int cursor = connection->cursor;
-    if (cursor + bytes >= sizeof connection->buffer)
+    int cursor = buffer->cursor;
+    if (cursor + bytes >= sizeof buffer->buf)
     {
         return -1;
     }
 
-    uint8_t *p = (uint8_t *)(&connection->buffer[cursor]);
+    uint8_t *p = (uint8_t *)(&buffer->buf[cursor]);
     memcpy(p, data, bytes);
-    connection->cursor = cursor + bytes;
+    buffer->cursor = cursor + bytes;
 
     return 0;
 }
 
 int
-buffer_add_u8(struct connection_t *connection, uint8_t val)
+buffer_add_u8(struct buffer_t *buffer, uint8_t val)
 {
-    return buffer_fill(connection, &val, sizeof val);
+    return buffer_fill(buffer, &val, sizeof val);
 }
 
 int
-buffer_add_u32(struct connection_t *connection, uint32_t val)
+buffer_add_u32(struct buffer_t *buffer, uint32_t val)
 {
-    return buffer_fill(connection, &val, sizeof val);
+    return buffer_fill(buffer, &val, sizeof val);
 }
 
 int
-buffer_add_u64(struct connection_t *connection, uint64_t val)
+buffer_add_u64(struct buffer_t *buffer, uint64_t val)
 {
-    return buffer_fill(connection, &val, sizeof val);
+    return buffer_fill(buffer, &val, sizeof val);
 }
 
 /*
@@ -246,23 +246,23 @@ buffer_add_u64(struct connection_t *connection, uint64_t val)
 typedef int (*message_handler_t)(struct connection_t *);
 
 int
-buffer_send(struct connection_t *connection)
+buffer_send(int fd, struct buffer_t *buffer)
 {
     ssize_t bytes_sent;
-    char *buffer = connection->buffer;
-    uint32_t cursor = connection->cursor;
-    uint32_t pos = connection->pos;
+    char *buf = buffer->buf;
+    uint32_t cursor = buffer->cursor;
+    uint32_t pos = buffer->pos;
     uint32_t to_send = cursor - pos;
    
     if (to_send > 0)
     {
-        bytes_sent = write(connection->fd, buffer + pos, cursor - pos);
+        bytes_sent = write(fd, buf + pos, cursor - pos);
 
         if (bytes_sent != to_send)
         {
             if (bytes_sent > 0)
             {
-                connection->pos = pos + bytes_sent;
+                buffer->pos = pos + bytes_sent;
                 return 1;
             }
             else
@@ -272,8 +272,8 @@ buffer_send(struct connection_t *connection)
         }
     }
 
-    connection->pos = 0;
-    connection->cursor = 0;
+    buffer->pos = 0;
+    buffer->cursor = 0;
 
     return 0;
 }

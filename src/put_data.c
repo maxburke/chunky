@@ -34,8 +34,8 @@ read_put_data_request(struct connection_t *connection)
     ssize_t bytes_expected;
     ssize_t bytes_read;
 
-    buffer = connection->buffer;
-    pos = connection->pos;
+    buffer = connection->buffer.buf;
+    pos = connection->buffer.pos;
     bytes_expected = sizeof(struct put_data_request_t) - pos;
     bytes_read = read(connection->fd, buffer + pos, bytes_expected);
 
@@ -46,14 +46,14 @@ read_put_data_request(struct connection_t *connection)
 
     if (bytes_read != bytes_expected)
     {
-        connection->pos = pos + bytes_read;
+        connection->buffer.pos = pos + bytes_read;
         return 1;
     }
 
     memmove(&connection->put_data_context.request, buffer, sizeof(struct put_data_request_t));
 
     connection->state |= READ_REQUEST;
-    connection->pos = 0;
+    connection->buffer.pos = 0;
     memset(buffer, 0, sizeof(struct put_data_request_t));
 
     mlb_sha1_hash_init(&connection->hash_context);
@@ -191,9 +191,7 @@ initialize_mirror(struct connection_t *connection)
 
     connection->fd      = sock;
     connection->message = MESSAGE_CHUNK_MIRROR;
-    memset(connection->buffer, 0, sizeof connection->buffer);
-    connection->cursor  = 0;
-    connection->pos     = 0;
+    memset(&connection->buffer, 0, sizeof connection->buffer);
     connection->state   = 0;
     memset(&connection->hash_context, 0, sizeof connection->hash_context);
 

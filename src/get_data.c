@@ -26,8 +26,8 @@ read_get_data_request(struct connection_t *connection)
     ssize_t bytes_expected;
     ssize_t bytes_read;
 
-    buffer = connection->buffer;
-    pos = connection->pos;
+    buffer = connection->buffer.buf;
+    pos = connection->buffer.pos;
     bytes_expected = sizeof(struct get_data_request_t) - pos;
     bytes_read = read(connection->fd, buffer + pos, bytes_expected);
 
@@ -38,14 +38,14 @@ read_get_data_request(struct connection_t *connection)
 
     if (bytes_read != bytes_expected)
     {
-        connection->pos = pos + bytes_read;
+        connection->buffer.pos = pos + bytes_read;
         return 1;
     }
 
     memmove(&connection->get_data_context.request, buffer, sizeof(struct get_data_request_t));
 
     connection->state |= READ_REQUEST;
-    connection->pos = 0;
+    connection->buffer.pos = 0;
     memset(buffer, 0, sizeof(struct get_data_request_t));
 
 
@@ -161,21 +161,21 @@ message_get_chunk_data_handler(struct connection_t *connection)
             return 0;
         }
 
-        buffer_add_u8(connection, OK);
+        buffer_add_u8(&connection->buffer, OK);
     }
     assert((connection->state & MAPPED_FILE) != 0);
 
-    FLUSH_BUFFER(connection->state, connection);
+    FLUSH_BUFFER(connection->state, connection->fd, &connection->buffer);
 
     if ((connection->state & SENT_SIZE) == 0)
     {
-        buffer_add_u64(connection, connection->get_data_context.size);
+        buffer_add_u64(&connection->buffer, connection->get_data_context.size);
 
         connection->state |= SENT_SIZE;
     }
     assert((connection->state & SENT_SIZE) != 0);
 
-    FLUSH_BUFFER(connection->state, connection);
+    FLUSH_BUFFER(connection->state, connection->fd, &connection->buffer);
 
     /*
      * The data format includes a leading 20-bytes in the file with the content
