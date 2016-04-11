@@ -109,12 +109,10 @@ initialize_last_chunk(char last_chunk[128], const void *data, size_t length)
     if (remainder >= 55)
     {
         write_length(last_chunk + 120, length);
-        ptr = last_chunk;
         return 2;
     }
 
     write_length(last_chunk + 56, length);
-    ptr = last_chunk;
     return 1;
 }
 

@@ -73,7 +73,10 @@ message_get_chunk_list_handler(struct connection_t *connection)
             goto chunk_list_flush;
         }
 
-        state |= SENT_HASH;
+        /*
+         * Setting this state flag is not necessary.
+         * state |= SENT_HASH;
+         */
     }
 
     return 0;
