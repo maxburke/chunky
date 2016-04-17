@@ -1,4 +1,5 @@
 #include "chunky.h"
+#include "chunky_internal.h"
     
 int
 message_get_chunk_list_handler(struct connection_t *connection)

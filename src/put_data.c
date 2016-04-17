@@ -15,6 +15,7 @@
 #include <unistd.h>
 
 #include "chunky.h"
+#include "chunky_internal.h"
 
 enum put_data_states_t
 {

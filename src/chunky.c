@@ -17,6 +17,7 @@
 #include <sys/types.h>
 
 #include "chunky.h"
+#include "chunky_internal.h"
 #include "mlb_sha1.h"
 
 #define UNUSED(x) (void)(sizeof(x))
@@ -31,21 +32,19 @@
 #define MAX_EVENTS                  16
 
 static char data_directory[256];
-static uint32_t chunk_num;
-static uint32_t chunk_capacity;
-static uint64_t *chunks;
+static struct chunk_list_t chunks;
 static int epoll_fd;
 
 uint32_t
 get_chunk_num(void)
 {
-    return chunk_num;
+    return chunks.num;
 }
 
 const uint64_t *
 get_chunks(void)
 {
-    return chunks;
+    return chunks.ptr;
 }
 
 int
@@ -55,21 +54,30 @@ get_epoll_fd(void)
 }
 
 static void
-chunk_push(uint64_t chunk_id)
+chunk_push(struct chunk_list_t *list, uint64_t chunk_id)
 {
-    if (chunk_num == chunk_capacity)
+    assert(list != NULL);
+
+    uint32_t capacity = list->capacity;
+    uint32_t num = list->num;
+    uint64_t *chunks = list->ptr;
+
+    if (num == capacity)
     {
-        uint32_t chunk_capacity_new = 1.5 * (double)chunk_capacity;
+        uint32_t new_capacity = 1.5 * (double)capacity;
         
-        if (chunk_capacity == 0)
+        if (capacity == 0)
         {
-            chunk_capacity_new = 1 << 10;
+            new_capacity = 1 << 10;
         }
         
-        chunks = realloc(chunks, chunk_capacity_new * sizeof(uint64_t));
+        chunks = realloc(chunks, new_capacity * sizeof(uint64_t));
+        list->ptr = chunks;
+        list->capacity = new_capacity;
     }
 
-    chunks[chunk_num++] = chunk_id;
+    chunks[num++] = chunk_id;
+    list->num = num;
 }
 
 static int
@@ -153,10 +161,10 @@ chunk_list_build(void)
             return 1;
         }
        
-        chunk_push(chunk_id);
+        chunk_push(&chunks, chunk_id);
     }
 
-    qsort(chunks, i, sizeof(uint64_t), chunk_id_predicate);
+    qsort(&chunks.ptr, i, sizeof(uint64_t), chunk_id_predicate);
 
     closedir(directory);
 

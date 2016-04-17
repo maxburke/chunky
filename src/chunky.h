@@ -172,15 +172,6 @@ message_mirror_chunk_data_handler(struct connection_t *connection);
 const char *
 get_data_directory(void);
 
-uint32_t
-get_chunk_num(void);
-
-const uint64_t *
-get_chunks(void);
-
-int
-get_epoll_fd(void);
-
 int
 add_to_epoll_list(int fd);
 
