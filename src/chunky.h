@@ -151,6 +151,13 @@ struct connection_t
     struct mlb_sha1_hash_context_t hash_context;
 };
 
+/*
+ * Message handlers must be re-entrant.
+ * Return value is zero if processing of the message is complete,
+ * non-zero otherwise.
+ */
+typedef int (*message_handler_t)(struct connection_t *);
+
 int 
 message_initial_handler(struct connection_t *connection);
 
@@ -222,4 +229,13 @@ buffer_send(int fd, struct buffer_t *buffer);
     } while(0)
 
 #define VERIFY(x) if (!(x)) { PERROR(); return -1; }
+
+#define UNUSED(x) (void)(sizeof(x))
+
+#define TOKEN_PASTE_HELPER(x, y)    x ## y
+#define TOKEN_PASTE(x, y)           TOKEN_PASTE_HELPER(x, y)
+#define COMPILETIME_ASSERT(x)       typedef char TOKEN_PASTE(compileTimeAssert, __LINE__)[x ? 1 : -1]
+
+#define ARRAY_COUNT(x)              (sizeof(x) / sizeof(x[0]))
+
 

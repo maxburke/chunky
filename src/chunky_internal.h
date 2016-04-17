@@ -7,6 +7,15 @@ struct chunk_list_t
     uint64_t *ptr;
 };
 
+void
+chunk_push(struct chunk_list_t *list, uint64_t chunk_id);
+
+int
+chunk_name_to_id(uint64_t *id, const char *name);
+
+int
+chunk_list_build(struct chunk_list_t *chunks);
+
 uint32_t
 get_chunk_num(void);
 
@@ -15,4 +24,7 @@ get_chunks(void);
 
 int
 get_epoll_fd(void);
+
+void
+set_epoll_fd(int);
 
