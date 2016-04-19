@@ -225,9 +225,9 @@ do_listen_loop(void)
 int
 main(int argc, char **argv)
 {
-    if (argc < 3)
+    if (argc < 2)
     {
-        fprintf(stderr, "usage: chunky [datadir]");
+        fprintf(stderr, "usage: chunky [datadir]\n");
         return -1;
     }
 
