@@ -1,3 +1,8 @@
+#define _GNU_SOURCE
+#include <string.h>
+
+#include <dlfcn.h>
+
 #include "mock.h"
 
 struct mocks_t mocks;
@@ -138,6 +143,43 @@ ssize_t
 write(int fd, const void *buf, size_t count)
 {
     return mocks.write(fd, buf, count);
+}
+
+void
+mock_create_default(struct mocks_t *mocks)
+{
+    static struct mocks_t default_mocks;
+    static int initialized;
+
+    if (initialized)
+    {
+        memcpy(mocks, &default_mocks, sizeof(struct mocks_t));
+        return;
+    }
+
+    initialized = 1;
+    default_mocks.accept = dlsym(RTLD_NEXT, "accept");
+    default_mocks.access = dlsym(RTLD_NEXT, "access");
+    default_mocks.bind = dlsym(RTLD_NEXT, "bind");
+    default_mocks.close = dlsym(RTLD_NEXT, "close");
+    default_mocks.closedir = dlsym(RTLD_NEXT, "closedir");
+    default_mocks.connect = dlsym(RTLD_NEXT, "connect");
+    default_mocks.epoll_ctl = dlsym(RTLD_NEXT, "epoll_ctl");
+    default_mocks.epoll_create = dlsym(RTLD_NEXT, "epoll_create");
+    default_mocks.epoll_wait = dlsym(RTLD_NEXT, "epoll_wait");
+    default_mocks.fcntl = dlsym(RTLD_NEXT, "fcntl");
+    default_mocks.ftruncate = dlsym(RTLD_NEXT, "ftruncate");
+    default_mocks.linkat = dlsym(RTLD_NEXT, "linkat");
+    default_mocks.listen = dlsym(RTLD_NEXT, "listen");
+    default_mocks.mmap = dlsym(RTLD_NEXT, "mmap");
+    default_mocks.munmap = dlsym(RTLD_NEXT, "munmap");
+    default_mocks.open = dlsym(RTLD_NEXT, "open");
+    default_mocks.opendir = dlsym(RTLD_NEXT, "opendir");
+    default_mocks.read = dlsym(RTLD_NEXT, "read");
+    default_mocks.readdir = dlsym(RTLD_NEXT, "readdir");
+    default_mocks.socket = dlsym(RTLD_NEXT, "socket");
+    default_mocks.shutdown = dlsym(RTLD_NEXT, "shutdown");
+    default_mocks.write = dlsym(RTLD_NEXT, "write");
 }
 
 /*

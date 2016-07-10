@@ -3,7 +3,7 @@ OS = $(shell uname)
 DEFINES = _POSIX_C_SOURCE=200112L
 INCLUDEDIRS = /usr/local/include ../include ../src
 
-CFLAGS = -g -Wall -Wextra -Werror -pedantic -std=c11 -DLITTLE_ENDIAN=1
+CFLAGS = -g -Wall -Wextra -Werror -std=c11 -DLITTLE_ENDIAN=1
 OBJS = $(patsubst %.c,%.o,$(wildcard *.c))
 HEADERS = $(wildcard *.h)
 
