@@ -34,7 +34,7 @@ clean-src clean-tests:
 	$(CC) $(CFLAGS) -c -o $@ $< $(addprefix -I, $(INCLUDEDIRS)) $(addprefix -D, $(DEFINES))
 
 testchunky : src tests
-	$(LD) $(LDFLAGS) -o $@ $(RUNTIME_LIB) $(TEST_LIB) -ldl
+	$(LD) $(LDFLAGS) -o $@ $(TEST_LIB) $(RUNTIME_LIB) -ldl
 
 chunky : $(OBJS) src
 	$(LD) $(LDFLAGS) -o $@ $(filter %.o,$^) $(RUNTIME_LIB)
