@@ -38,6 +38,19 @@ test_abort(const char *format, ...)
 }
 
 void
+test_list(void)
+{
+    struct testcase_link_t *p;
+
+    puts("Registered test cases:");
+
+    for (p = fixture.tests; p != NULL; p = p->next)
+    {
+        printf("  %s\n", p->testcase.name);
+    }
+}
+
+void
 test_register(struct testcase_t *test)
 {
     struct testcase_link_t *ptr;
@@ -65,6 +78,8 @@ test_run(const char *test_name, int verbose)
         {
             continue;
         }
+
+        printf("%32s ", p->testcase.name);
 
         /*
          * The test fixture uses setjmp and longjmp to allow cases to perform
@@ -113,7 +128,7 @@ test_run(const char *test_name, int verbose)
 
         fixture.passed += (1 - failed);
         fixture.failed +=      failed;
-        printf("%32s ... %s\n", p->testcase.name, failed ? "FAILED" : "passed");
+        printf(" ... %s\n", failed ? "FAILED" : "passed");
     }
 }
 

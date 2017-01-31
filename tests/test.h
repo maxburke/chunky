@@ -42,6 +42,9 @@ void
 test_abort(const char *format, ...);
 
 void
+test_list(void);
+
+void
 test_register(struct testcase_t *test);
 
 void
@@ -49,4 +52,8 @@ test_run(const char *test_name, int verbose);
 
 void
 test_print(const char *format, ...);
+
+#define TEST_ASSERT(x) do { if (!(x)) { test_print("%s", #x); return 1; } } while(0)
+#define TEST_ASSERT_MSG(x, ...) do { if (!(x)) { test_print(__VA_ARGS__); return 1; } } while(0)
+
 
