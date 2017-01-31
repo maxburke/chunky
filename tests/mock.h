@@ -31,6 +31,9 @@ struct mocks_t
     int (*socket)(int, int, int);
     int (*shutdown)(int, int);
     ssize_t (*write)(int, const void *, size_t);
+
+    const char *(*get_data_directory)(void);
+    int (*get_epoll_fd)(void);
 };
 
 void
