@@ -1,5 +1,6 @@
 #include <string.h>
 #include <stdint.h>
+#include <stdio.h>
 
 #include "unit.h"
 #include "test.h"
@@ -13,13 +14,16 @@
         test_register(&testcase); \
     } while(0)
 
-/*
 static int
 test_chunk_id_to_name(void)
 {
+    char buf[256];
 
+    chunk_id_to_name(buf, sizeof buf, 0x7f);
+    TEST_ASSERT(strstr(buf, "7f") != NULL);
+
+    return 0;
 }
-*/
 
 static int
 test_chunk_name_to_id(void)
@@ -34,6 +38,8 @@ test_chunk_name_to_id(void)
     return 0;
 }
 
+int unit_epoll_fd;
+
 static int
 test_get_epoll_fd(void)
 {
@@ -41,7 +47,7 @@ test_get_epoll_fd(void)
 
     fd = get_epoll_fd();
 
-    TEST_ASSERT(fd > 0);
+    TEST_ASSERT(fd == 0);
 
     return 0;
 }
@@ -53,7 +59,7 @@ register_unit_tests(void)
 
     memset(&testcase, 0, sizeof testcase);
 
-//    REGISTER_UNIT_TEST(test_chunk_id_to_name);
+    REGISTER_UNIT_TEST(test_chunk_id_to_name);
     REGISTER_UNIT_TEST(test_chunk_name_to_id);
     REGISTER_UNIT_TEST(test_get_epoll_fd);
 }
