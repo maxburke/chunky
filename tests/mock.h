@@ -41,3 +41,7 @@ mock_create_default(struct mocks_t *);
 
 void
 mock_set(struct mocks_t *);
+
+void
+mock_get(struct mocks_t *);
+

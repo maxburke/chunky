@@ -14,6 +14,12 @@ mock_set(struct mocks_t *new_mocks)
     mocks = *new_mocks;
 }
 
+void
+mock_get(struct mocks_t *m)
+{
+    memcpy(m, &mocks, sizeof mocks);
+}
+
 int
 accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen)
 {
