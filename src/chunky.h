@@ -11,8 +11,16 @@ enum message_t
     MESSAGE_GET_CHUNK_DATA = 3,
     MESSAGE_PUT_CHUNK_DATA = 4,
     MESSAGE_DELETE_CHUNK = 5,
-    MESSAGE_SHUTDOWN = 6,
-    MESSAGE_CHUNK_MIRROR = 7,
+
+    /*
+     * Not yet implemented
+     */
+    MESSAGE_SHUTDOWN,
+    MESSAGE_CHUNK_MIRROR,
+
+    /*
+     * Not a message.
+     */
     MESSAGE_MAX
 };
 
@@ -76,6 +84,10 @@ enum flags_t
 
 /*
  * SHUTDOWN
+ */
+
+/*
+ * CHUNK_MIRROR
  */
 
 enum response_code_t
