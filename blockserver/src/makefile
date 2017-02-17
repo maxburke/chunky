@@ -20,14 +20,14 @@ endif
 %.o : %.c $(HEADERS)
 	$(CC) -c -o $@ $< $(CFLAGS) $(addprefix -I, $(INCLUDEDIRS)) $(addprefix -D, $(DEFINES))
 
-libchunky.a : $(OBJS)
+libblockserver.a : $(OBJS)
 	if test -f $@; then rm $@; fi
 	ar -r $@ $(OBJS)
 
 .PHONY : clean
 clean :
-	rm *.o
-	rm libchunky.a
+	-rm *.o
+	-rm libblockserver.a
 
 .PHONY : all
-all: libchunky.a
+all: libblockserver.a
