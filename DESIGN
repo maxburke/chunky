@@ -1,0 +1,57 @@
+General
++++++++
+The chunky block storage system has two components:
+  1. blockmaster
+     The purpose of the blockmaster is to store all system metadata. This
+     includes all active blockservers, all stored blocks, and which servers
+     store which blocks.
+
+  2. blockserver
+     The blockserver handles receiving block data, storing it, and serving it
+     back when requested. The blockserver also handles the meat of data
+     replication amongst other blockserver nodes.
+
+
+BLOCKMASTER DESIGN
+++++++++++++++++++
+The system is designed to have multiple blockmaster nodes in service. Metadata
+is replicated via Raft consensus from the master to the other nodes.
+
+Block Data Storage
+==================
+Block data is stored in a B+ tree.
+
+Block ID
+========
+u32: blockmaster ID
+u32: sequential record ID
+
+Block Record
+============
+u8[256]: file name
+u64: block id
+u32[3]: replication list
+u64: block checksum
+----
+284 bytes
+
+New Blockmaster Join Flow
+=========================
+0. The parent has the new blockmaster (NBM) network address and public key
+   added. The NBM is authenticated.
+1. The parent process mprotect()'s the block data to RO
+2. A child process is forked
+3. Block data is transmitted in bulk to the NBM. 
+4. Mutations to the parent block metadata are accumulated in the transaction log
+5. Once the block data has been transmitted to NBM, the parent unlocks the block
+   data and simultaneously applies the accumulated log differences to the local
+   metadata store and replays to the NBM via log replication messages
+6. After the log differences have been caught up the rest of the cluster is 
+   notified of the new blockmaster
+
+Datagram Message Format
+=======================
+Session Begin
+-------------
+
+
