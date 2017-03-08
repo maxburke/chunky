@@ -1,7 +1,7 @@
 OS = $(shell uname)
 
 CFLAGS = -Wall -Wextra -pedantic -g -Werror -std=c11
-DEFINES = _POSIX_C_SOURCE=200112L
+DEFINES = _POSIX_C_SOURCE=200809L
 INCLUDEDIRS = /usr/local/include src include tests
 TEST_LIB = tests/libblockserver_test.a
 RUNTIME_LIB = src/libblockserver.a

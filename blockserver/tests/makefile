@@ -1,6 +1,6 @@
 OS = $(shell uname)
 
-DEFINES = _POSIX_C_SOURCE=200112L
+DEFINES = _POSIX_C_SOURCE=200809L
 INCLUDEDIRS = /usr/local/include ../include ../src
 
 CFLAGS = -g -Wall -Wextra -Werror -std=c11 -DLITTLE_ENDIAN=1
