@@ -51,9 +51,15 @@ void
 test_run(const char *test_name, int verbose);
 
 void
+test_shutdown(void);
+
+void
 test_print(const char *format, ...);
 
-#define TEST_ASSERT(x) do { if (!(x)) { test_print("%s", #x); return 1; } } while(0)
-#define TEST_ASSERT_MSG(x, ...) do { if (!(x)) { test_print(__VA_ARGS__); return 1; } } while(0)
+void
+test_print_location(const char *file, int line, const char *format, ...);
+
+#define TEST_ASSERT(x) do { if (!(x)) { test_print_location(__FILE__, __LINE__, "%s", #x); return 1; } } while(0)
+#define TEST_ASSERT_MSG(x, ...) do { if (!(x)) { test_print_location(__FILE__, __LINE__, __VA_ARGS__); return 1; } } while(0)
 
 

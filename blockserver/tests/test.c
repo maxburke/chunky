@@ -55,80 +55,107 @@ test_register(struct testcase_t *test)
 {
     struct testcase_link_t *ptr;
 
-    ptr = malloc(sizeof(struct testcase_link_t));
+    ptr = calloc(sizeof(struct testcase_link_t), 1);
     ptr->testcase = *test;
     ptr->next = fixture.tests;
     fixture.tests = ptr;
 }
 
+static void
+testcase_run(struct testcase_link_t *p, const char *test_name)
+{
+    int failed;
+    
+    failed = 0;
+
+    if (test_name != NULL && strcmp(p->testcase.name, test_name) != 0)
+    {
+        return;
+    }
+
+    printf("%32s ", p->testcase.name);
+
+    /*
+     * The test fixture uses setjmp and longjmp to allow cases to perform
+     * non-local exits should the need to immediately abort arise.
+     */
+    if (setjmp(fixture.context) == 0)
+    {
+        if (p->testcase.setup && p->testcase.setup() != 0)
+        {
+            failed = 1;
+            goto teardown;
+        }
+    }
+    else
+    {
+        failed = 1;
+        goto teardown;
+    }
+
+    if (setjmp(fixture.context) == 0)
+    {
+        if (!p->testcase.test || p->testcase.test() != 0)
+        {
+            failed = 1;
+            goto teardown;
+        }
+    }
+    else
+    {
+        failed = 1;
+        goto teardown;
+    }
+
+teardown:
+    if (setjmp(fixture.context) == 0)
+    {
+        if (p->testcase.teardown && p->testcase.teardown() != 0)
+        {
+            failed = 1;
+        }
+    }
+    else
+    {
+        failed = 1;
+    }
+
+    fixture.passed += (1 - failed);
+    fixture.failed +=      failed;
+    printf(" ... %s\n", failed ? "FAILED" : "passed");
+}
+
+static void
+test_run_recursive(struct testcase_link_t *p, const char *test_name)
+{
+    if (p->next != NULL)
+    {
+        test_run_recursive(p->next, test_name);
+    }
+
+    testcase_run(p, test_name);
+}
+
 void
 test_run(const char *test_name, int verbose)
 {
-    struct testcase_link_t *p;
-
     fixture.verbose = verbose;
 
-    for (p = fixture.tests; p != NULL; p = p->next)
+    test_run_recursive(fixture.tests, test_name);
+}
+
+void
+test_shutdown(void)
+{
+    struct testcase_link_t *p;
+
+    for (p = fixture.tests; p != NULL;)
     {
-        int failed;
-        
-        failed = 0;
+        struct testcase_link_t *next;
 
-        if (test_name != NULL && strcmp(p->testcase.name, test_name) != 0)
-        {
-            continue;
-        }
-
-        printf("%32s ", p->testcase.name);
-
-        /*
-         * The test fixture uses setjmp and longjmp to allow cases to perform
-         * non-local exits should the need to immediately abort arise.
-         */
-        if (setjmp(fixture.context) == 0)
-        {
-            if (p->testcase.setup && p->testcase.setup() != 0)
-            {
-                failed = 1;
-                goto teardown;
-            }
-        }
-        else
-        {
-            failed = 1;
-            goto teardown;
-        }
-
-        if (setjmp(fixture.context) == 0)
-        {
-            if (!p->testcase.test || p->testcase.test() != 0)
-            {
-                failed = 1;
-                goto teardown;
-            }
-        }
-        else
-        {
-            failed = 1;
-            goto teardown;
-        }
-
-    teardown:
-        if (setjmp(fixture.context) == 0)
-        {
-            if (p->testcase.teardown && p->testcase.teardown != 0)
-            {
-                failed = 1;
-            }
-        }
-        else
-        {
-            failed = 1;
-        }
-
-        fixture.passed += (1 - failed);
-        fixture.failed +=      failed;
-        printf(" ... %s\n", failed ? "FAILED" : "passed");
+        next = p->next;
+        free(p);
+        p = next;
     }
 }
 
@@ -142,6 +169,22 @@ test_print(const char *format, ...)
         return;
     }
 
+    va_start(args, format);
+    vprintf(format, args);
+    va_end(args);
+}
+
+void
+test_print_location(const char *file, int line, const char *format, ...)
+{
+    va_list args;
+
+    if (!fixture.verbose)
+    {
+        return;
+    }
+
+    printf("%s(%d): ", file, line);
     va_start(args, format);
     vprintf(format, args);
     va_end(args);
