@@ -31,9 +31,8 @@ Block Record
 u8[256]: file name
 u64: block id
 u32[3]: replication list
-u64: block checksum
 ----
-284 bytes
+276 bytes
 
 New Blockmaster Join Flow
 =========================
@@ -49,9 +48,57 @@ New Blockmaster Join Flow
 6. After the log differences have been caught up the rest of the cluster is 
    notified of the new blockmaster
 
-Datagram Message Format
-=======================
-Session Begin
--------------
+Message Types
+=============
+(r) = replicated messages
 
+1. BLOCKMASTER_ADD (r)
+    u32: blockmaster address
+    u8[32]: blockmaster public key
+    u8[64]: blockmaster name
 
+2. BLOCKMASTER_REMOVE (r)
+    u32: blockmaster address
+
+3. FILE_ADD (r)
+    u8[256]: file name
+    u64: block id
+    u32[3]: replication list
+
+4. FILE_REPLACE (r)
+    u8[256]: file name
+    u64: block id
+    u32[3]: replication list
+
+5. FILE_DEL (r)
+    u64: block id
+
+6. MIRROR_COMPLETE
+    (blockserver -> blockmaster)
+
+7. REQUEST_FILE_ADD
+    u8[256]: file name
+    -> u64: block id
+
+8. METADATA_QUERY_BEGIN
+    u8[256]: search wildcard
+    -> u64: metadata query token (0 if invalid)
+
+9. METADATA_QUERY_NEXT
+    u64: metadata query token
+    -> u32: num results in batch
+       n * { 
+           u8[256]: filename
+           u64: block id
+           u32[3] replication list
+       }
+
+10. METADATA_QUERY_END
+    u64: metadata query token
+    -> u32: success (0) / fail (!0)
+
+10. BLOCKMASTER_LIST
+    -> 
+
+11. PING
+    -> PONG
